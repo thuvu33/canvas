@@ -8,6 +8,8 @@
 	<section>
 		<div>
 			<button type="button" onclick="actionAddNode()"> Add</button>
+			<button type="button" onclick="actionAddLink()"> Link</button>
+			<button type="button" onclick="actionDelLink()"> DelLink</button>
 		</div>
 		<div>
 			<canvas id="canvas" width="800" height="800">
@@ -26,6 +28,8 @@
 			var HEIGHT = 800;
 			var dragok = false;
 			var turnOnAddNode = false;
+			var addLinkFirst = -1;
+			var addLinkSecond = -1;
 
 			function arrow(fromx, fromy, tox, toy){
 				    var headlen = 10;   // length of head in pixels
@@ -121,6 +125,30 @@
 				canvas.onmousedown = myDown;
 			}
 
+			function actionAddLinkDown(e){
+				for(var i = 0; i < indexList; i++)
+				{
+					if((e.pageX >= listNode[i].posx) && (e.pageX <= listNode[i].posx + 60) && (e.pageY >= listNode[i].posy) && (e.pageY <= listNode[i].posy + 60)){
+						if(addLinkFirst < 0){
+							addLinkFirst = i;
+							alert("First " + addLinkFirst);
+						}
+						else if(addLinkSecond < 0 && addLinkFirst != i){
+							addLinkSecond = i;
+							alert("Second " + addLinkSecond);
+							listNode[addLinkFirst].link.push(addLinkSecond);
+							addLinkFirst = -1;
+							addLinkSecond = -1;
+							canvas.onmousedown = myDown;
+						}
+					}
+				}
+			}
+
+			function actionAddLink(){
+				canvas.onmousedown = actionAddLinkDown;
+			}
+
 			function actionAddNode(){
 				canvas.onmousedown = actionAddNodeDown;
 			}
@@ -142,9 +170,9 @@
 				canvas.onmousemove = null;
 			}
 
-			addNode(100, 100, "Node 1", [1, 2]);
-			addNode(200, 200, "Node 2", [2,3]);
-			addNode(100, 300, "Node 3", [3]);
+			addNode(100, 100, "Node 1", []);
+			addNode(200, 200, "Node 2", []);
+			addNode(100, 300, "Node 3", []);
 			addNode(400, 100, "Node 4", []);
 			init();
 			//draw();

@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8" />
+	<title>Canvas Drag and Drop Test</title>
+</head>
+<body>
+	<section>
+		<div>
+			<button type="button" onclick="actionAddNode()"> Add</button>
+		</div>
+		<div>
+			<canvas id="canvas" width="800" height="800">
+				This text is displayed if your browser does not support HTML5 Canvas.
+			</canvas>
+		</div>
+
+		<script type="text/javascript">
+
+			var canvas;
+			var currentGrag;
+			var ctx;
+			var listNode = new Array(100);
+			var indexList = 0;
+			var WIDTH = 800;
+			var HEIGHT = 800;
+			var dragok = false;
+			var turnOnAddNode = false;
+
+			function rect() {
+				for(var i = 0; i <= indexList; i++)
+				{
+					ctx.beginPath();
+					ctx.rect(listNode[i].posx, listNode[i].posy, 60, 60);
+					ctx.stroke();
+					ctx.closePath();
+				}
+			}
+
+			function triangle(fromx, fromy, tox, toy){
+				    var headlen = 10;   // length of head in pixels
+				    var angle = Math.atan2(toy-fromy,tox-fromx);
+				    ctx.beginPath();
+				    ctx.moveTo(fromx, fromy);
+				    ctx.lineTo(tox, toy);
+				    ctx.lineTo(tox-headlen*Math.cos(angle-Math.PI/6),toy-headlen*Math.sin(angle-Math.PI/6));
+				    ctx.moveTo(tox, toy);
+				    ctx.lineTo(tox-headlen*Math.cos(angle+Math.PI/6),toy-headlen*Math.sin(angle+Math.PI/6));
+				    ctx.stroke();
+				    ctx.closePath();
+				}
+
+
+				function getPointOnCircle(radius, fromx, fromy, tox, toy) {
+					var angleInDegrees = getAngleBetweenPoints(fromx, fromy, tox, toy);      
+					var x = radius * Math.cos(angleInDegrees * Math.PI / 180) + fromx;
+					var y = radius * Math.sin(angleInDegrees * Math.PI / 180) + fromy;
+
+					return { px: x, py: y };
+				}
+
+				function getAngleBetweenPoints(fromx, fromy, tox, toy) {
+					return Math.atan2(toy - fromy, tox - fromx) * 180 / Math.PI;
+				}
+
+				function circle(){
+					for(var i = 0; i <= indexList; i++)
+					{
+						ctx.beginPath();
+						ctx.arc(listNode[i].posx, listNode[i].posy, 30, 0, 2 * Math.PI, false);
+						ctx.stroke();
+						ctx.closePath();
+					}
+				}
+
+				function clear() {
+					ctx.clearRect(0, 0, WIDTH, HEIGHT);
+				}
+
+				function draw() {
+					clear();
+					var tf = getPointOnCircle(30, listNode[0].posx, listNode[0].posy,  listNode[1].posx, listNode[1].posy);
+					var tt = getPointOnCircle(30, listNode[1].posx, listNode[1].posy,  listNode[0].posx, listNode[0].posy);
+					triangle( tf.px, tf.py,  tt.px, tt.py);
+					circle();
+				}
+
+				function init() {
+					canvas = document.getElementById("canvas");
+					ctx = canvas.getContext("2d");
+					return setInterval(draw, 10);
+				//draw();
+			}
+
+			function myMove(e){
+				if (dragok){
+					listNode[currentGrag].posx = e.pageX;
+					listNode[currentGrag].posy = e.pageY;
+				}
+			}
+
+			function addNode(x, y, text){
+				var node = {
+					posx : x,
+					posy : y,
+					content  : text
+				};
+				listNode[indexList] = node;
+				indexList = indexList + 1;
+			}
+
+			function actionAddNodeDown(e){
+				addNode(e.pageX, e.pageY, "Node1");
+				canvas.onmousedown = myDown;
+			}
+
+			function actionAddNode(){
+				canvas.onmousedown = actionAddNodeDown;
+			}
+
+			function myDown(e){
+				for(var i = 0; i < listNode.length; i++)
+				{
+					if((e.pageX >= listNode[i].posx) && (e.pageX <= listNode[i].posx + 60) && (e.pageY >= listNode[i].posy) && (e.pageY <= listNode[i].posy + 60))
+					{
+						dragok = true;
+						canvas.onmousemove = myMove;
+						currentGrag = i;
+					}
+				}
+			}
+
+			function myUp(){
+				dragok = false;
+				canvas.onmousemove = null;
+			}
+
+			addNode(100, 100, "Node 1");
+			addNode(100, 200, "Node 2");
+			init();
+			//draw();
+			canvas.onmousedown = myDown;
+			canvas.onmouseup = myUp;
+
+		</script>
+
+	</section>
+</body>
+</html>

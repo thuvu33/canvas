@@ -40,6 +40,8 @@
 		<div>
 			<table id="sensor-table" >
 			</table>
+			<table id="channel-table" >
+			</table>
 		</div>
 
 		<script type="text/javascript">
@@ -124,8 +126,8 @@
 			function init() {
 				canvas = document.getElementById("canvas");
 				ctx = canvas.getContext("2d");
-				//return setInterval(draw, 10);
-				draw();
+				return setInterval(draw, 10);
+				//draw();
 			}
 
 			function myMove(e){
@@ -155,6 +157,7 @@
 
 			function actionAddNodeDown(e){
 				addNode(e.pageX, e.pageY, "Node1", []);
+				actionSetting();//Reload
 				canvas.onmousedown = myDown;
 			}
 
@@ -179,140 +182,143 @@
 						canvas.onmousedown = myDown;
 					}
 				}
+                actionSetting();//Reload
+            }
 
-			}
+            function actionAddLinkDown(e){
+            	for(var i = 0; i < indexList; i++)
+            	{
+            		if((e.pageX >= listNode[i].posx) && (e.pageX <= listNode[i].posx + 60) && (e.pageY >= listNode[i].posy) && (e.pageY <= listNode[i].posy + 60)){
+            			if(addLinkFirst < 0){
+            				addLinkFirst = i;
+            				alert("First " + addLinkFirst);
+            			}
+            			else if(addLinkSecond < 0 && addLinkFirst != i){
+            				addLinkSecond = i;
+            				var xx = listNode[addLinkFirst].link.indexOf(addLinkSecond);
+            				if(xx < 0){
+            					listNode[addLinkFirst].link.push(addLinkSecond);
+            					alert("Second " + addLinkSecond);
+            				}
+            				addLinkFirst = -1;
+            				addLinkSecond = -1;
+            				canvas.onmousedown = myDown;
+            			}
+            		}
+            	}
+            }
 
-			function actionAddLinkDown(e){
-				for(var i = 0; i < indexList; i++)
-				{
-					if((e.pageX >= listNode[i].posx) && (e.pageX <= listNode[i].posx + 60) && (e.pageY >= listNode[i].posy) && (e.pageY <= listNode[i].posy + 60)){
-						if(addLinkFirst < 0){
-							addLinkFirst = i;
-							alert("First " + addLinkFirst);
-						}
-						else if(addLinkSecond < 0 && addLinkFirst != i){
-							addLinkSecond = i;
-							var xx = listNode[addLinkFirst].link.indexOf(addLinkSecond);
-							if(xx < 0){
-								listNode[addLinkFirst].link.push(addLinkSecond);
-								alert("Second " + addLinkSecond);
-							}
-							addLinkFirst = -1;
-							addLinkSecond = -1;
-							canvas.onmousedown = myDown;
-						}
-					}
-				}
-			}
+            function actionAddLink(){
+            	canvas.onmousedown = actionAddLinkDown;
+            }
 
-			function actionAddLink(){
-				canvas.onmousedown = actionAddLinkDown;
-			}
+            function actionDelLinkDown(e){
+            	for(var i = 0; i < indexList; i++)
+            	{
+            		if((e.pageX >= listNode[i].posx) && (e.pageX <= listNode[i].posx + 60) && (e.pageY >= listNode[i].posy) && (e.pageY <= listNode[i].posy + 60)){
+            			if(delLinkFirst < 0){
+            				delLinkFirst = i;
+            				alert("First " + delLinkFirst);
+            			}
+            			else if(delLinkSecond < 0 && delLinkFirst != i){
+            				delLinkSecond = i;
+            				alert("Second " + delLinkSecond);
+            				var xx = listNode[delLinkFirst].link.indexOf(delLinkSecond);
+            				if(xx >= 0){
+            					listNode[delLinkFirst].link.splice(xx, 1);
+            				}
+            				alert("Index " + xx);
+            				delLinkFirst = -1;
+            				delLinkSecond = -1;
+            				canvas.onmousedown = myDown;
+            			}
+            		}
+            	}
+            }
 
-			function actionDelLinkDown(e){
-				for(var i = 0; i < indexList; i++)
-				{
-					if((e.pageX >= listNode[i].posx) && (e.pageX <= listNode[i].posx + 60) && (e.pageY >= listNode[i].posy) && (e.pageY <= listNode[i].posy + 60)){
-						if(delLinkFirst < 0){
-							delLinkFirst = i;
-							alert("First " + delLinkFirst);
-						}
-						else if(delLinkSecond < 0 && delLinkFirst != i){
-							delLinkSecond = i;
-							alert("Second " + delLinkSecond);
-							var xx = listNode[delLinkFirst].link.indexOf(delLinkSecond);
-							if(xx >= 0){
-								listNode[delLinkFirst].link.splice(xx, 1);
-							}
-							alert("Index " + xx);
-							delLinkFirst = -1;
-							delLinkSecond = -1;
-							canvas.onmousedown = myDown;
-						}
-					}
-				}
-			}
+            function actionDelLink(){
+            	canvas.onmousedown = actionDelLinkDown;
+            }
 
-			function actionDelLink(){
-				canvas.onmousedown = actionDelLinkDown;
-			}
+            function actionAddNode(){
+            	canvas.onmousedown = actionAddNodeDown;
+            }
 
-			function actionAddNode(){
-				canvas.onmousedown = actionAddNodeDown;
-			}
+            function actionDelNode(){
+            	canvas.onmousedown = actionDelNodeDown;
+            }
 
-			function actionDelNode(){
-				canvas.onmousedown = actionDelNodeDown;
-			}
+            function myDown(e){
+            	for(var i = 0; i < indexList; i++)
+            	{
+            		if((e.pageX >= listNode[i].posx) && (e.pageX <= listNode[i].posx + 60) && (e.pageY >= listNode[i].posy) && (e.pageY <= listNode[i].posy + 60))
+            		{
+            			dragok = true;
+            			canvas.onmousemove = myMove;
+            			currentGrag = i;
+            		}
+            	}
+            }
 
-			function myDown(e){
-				for(var i = 0; i < indexList; i++)
-				{
-					if((e.pageX >= listNode[i].posx) && (e.pageX <= listNode[i].posx + 60) && (e.pageY >= listNode[i].posy) && (e.pageY <= listNode[i].posy + 60))
-					{
-						dragok = true;
-						canvas.onmousemove = myMove;
-						currentGrag = i;
-					}
-				}
-			}
+            function myUp(){
+            	dragok = false;
+            	canvas.onmousemove = null;
+            }
 
-			function myUp(){
-				dragok = false;
-				canvas.onmousemove = null;
-			}
+            function download(filename, text) {
+            	var pom = document.createElement('a');
+            	pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+            	pom.setAttribute('download', filename);
 
-			function saveTextAsFile(fileNameToSaveAs, textToSave)
-			{
-				var textToSaveAsBlob = new Blob([textToSave], {type:"text/plain"});
-				var textToSaveAsURL = window.URL.createObjectURL(textToSaveAsBlob);
+            	if (document.createEvent) {
+            		var event = document.createEvent('MouseEvents');
+            		event.initEvent('click', true, true);
+            		pom.dispatchEvent(event);
+            	}
+            	else {
+            		pom.click();
+            	}
+            }
+            function actionExportSetting(){
+            	var table = document.getElementById("sensor-table");
+            	var output = "";
+            	if(table.rows.length > 1){
+            		for (var r = 1, n = table.rows.length; r < n; r++) {
+            			var id = table.rows[r].cells[0].innerHTML;
+            			var type = table.rows[r].cells[1].childNodes[0].value;
+            			var size_buf = table.rows[r].cells[2].childNodes[0].value;
+            			output += "id=" + id + ";type=" + type + ";size_buf=" + size_buf+ "\n";
+            		}
+            	}
+            	alert(output);
+            	download('input.txt', output);
+            }
 
-				var downloadLink = document.createElement("a");
-				downloadLink.download = fileNameToSaveAs;
-				downloadLink.innerHTML = "Download File";
-				downloadLink.href = textToSaveAsURL;
-				downloadLink.onclick = destroyClickedElement;
-				downloadLink.style.display = "none";
-				document.body.appendChild(downloadLink);
+            function actionSaveSetting(){
+            	var table = document.getElementById("sensor-table");
+            	if(table.rows.length > 1){
+            		for (var r = 1, n = table.rows.length; r < n; r++) {
+            			var id = table.rows[r].cells[0].innerHTML;
+            			var val = table.rows[r].cells[2].childNodes[0].value;
+            			listNode[id].size_of_buf = val;
+            		}
+            	}
+            }
 
-				downloadLink.click();
-			}
-
-			function actionExportSetting(){
-/*				var table = document.getElementById("sensor-table");
-				var output;
-				if(table.rows.length > 1){
-					for (var r = 1, n = table.rows.length; r < n; r++) {
-						var id = table.rows[r].cells[0].innerHTML;
-						var type = table.rows[r].cells[1].childNodes[0].value;
-						var size_buf = table.rows[r].cells[2].childNodes[0].value;
-						alert("id=" + id + "type=" + type + "size_buf=" + size_buf);
-						output += "id=" + id + ";type=" + type + ";size_buf=" + size_buf;
-					}
-				}*/
-				saveTextAsFile("Example.txt", "Hello, world.");
-			}
-
-			function actionSaveSetting(){
-				var table = document.getElementById("sensor-table");
-				if(table.rows.length > 1){
-					for (var r = 1, n = table.rows.length; r < n; r++) {
-						var id = table.rows[r].cells[0].innerHTML;
-						var val = table.rows[r].cells[2].childNodes[0].value;
-						listNode[id].size_of_buf = val;
-					}
-				}
-			}
-
-			function actionSetting(){
-				var table = document.getElementById("sensor-table");
-				table.innerHTML = '';
-				var header = table.insertRow(0);
-				header.insertCell(0).innerHTML= '<th>ID</th>';
-				header.insertCell(1).innerHTML= '<th>NodeType</th>';
-				header.insertCell(2).innerHTML= '<th>MaxSizeOfBuffer</th>';
+            function actionSetting(){
+            	var table = document.getElementById("sensor-table");
+            	actionSaveSetting();
+            	table.innerHTML = '';
+            	var header_add = false;
 				for(var i = 0; i < indexList; i++){
 					if(listNode[i].id >= 0){
+						if(header_add == false){
+							var header = table.insertRow(0);
+							header.insertCell(0).innerHTML= '<th>ID</th>';
+							header.insertCell(1).innerHTML= '<th>NodeType</th>';
+							header.insertCell(2).innerHTML= '<th>MaxSizeOfBuffer</th>';
+							header_add = true;
+						}
 						var rowCount = table.rows.length;
 						var row = table.insertRow(rowCount);
 						row.insertCell(0).innerHTML= '<td>' + i + '</td>';
@@ -322,14 +328,50 @@
 				}
 			}
 
+            function autoSaveChannel(){
+            	var table = document.getElementById("channel-table");
+            	if(table.rows.length > 1){
+            		for (var r = 1, n = table.rows.length; r < n; r++) {
+            			var id = table.rows[r].cells[0].innerHTML;
+            			var val = table.rows[r].cells[2].childNodes[0].value;
+            			listNode[id].size_of_buf = val;
+            		}
+            	}
+            }
+
+			function reloadChannel(){
+				var table = document.getElementById("channel-table");
+            	autoSaveChannel();
+            	table.innerHTML = '';
+            	var header_add = false;
+				for(var i = 0; i < indexList; i++){
+					if(listNode[i].id >= 0){
+						if(header_add == false){
+							var header = table.insertRow(0);
+							header.insertCell(0).innerHTML= '<th>ID</th>';
+							header.insertCell(1).innerHTML= '<th>MaxSizeOfBuffer</th>';
+							header.insertCell(2).innerHTML= '<th>From</th>';
+							header.insertCell(3).innerHTML= '<th>To</th>';
+							header_add = true;
+						}
+						var rowCount = table.rows.length;
+						var row = table.insertRow(rowCount);
+						row.insertCell(0).innerHTML= '<td>' + i + '</td>';
+						row.insertCell(1).innerHTML= '<select id="select_'+ i +'"> <option value="0">Source</option> <option value="1">Intermediate</option> <option value="0">Sink</option> </select>';
+						row.insertCell(2).innerHTML = '<input type="text" value="'+ listNode[i].size_of_buf +'"/>';
+					}
+				}
+								
+			}
+
 			addNode(100, 100, "Node 1", []);
 			addNode(200, 200, "Node 2", []);
 			addNode(100, 300, "Node 3", []);
 			addNode(400, 100, "Node 4", []);
 			init();
-		//draw();
-		canvas.onmousedown = myDown;
-		canvas.onmouseup = myUp;
+			canvas.onmousedown = myDown;
+			canvas.onmouseup = myUp;
+		actionSetting();//Reload
 
 	</script>
 

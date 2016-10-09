@@ -27,17 +27,7 @@
 			var dragok = false;
 			var turnOnAddNode = false;
 
-			function rect() {
-				for(var i = 0; i <= indexList; i++)
-				{
-					ctx.beginPath();
-					ctx.rect(listNode[i].posx, listNode[i].posy, 60, 60);
-					ctx.stroke();
-					ctx.closePath();
-				}
-			}
-
-			function triangle(fromx, fromy, tox, toy){
+			function arrow(fromx, fromy, tox, toy){
 				    var headlen = 10;   // length of head in pixels
 				    var angle = Math.atan2(toy-fromy,tox-fromx);
 				    ctx.beginPath();
@@ -63,8 +53,24 @@
 					return Math.atan2(toy - fromy, tox - fromx) * 180 / Math.PI;
 				}
 
+				function linetoline(from, to){
+					var tf = getPointOnCircle(30, listNode[from].posx, listNode[from].posy,  listNode[to].posx, listNode[to].posy);
+					var tt = getPointOnCircle(30, listNode[to].posx, listNode[to].posy,  listNode[from].posx, listNode[from].posy);
+					arrow( tf.px, tf.py,  tt.px, tt.py);					
+				}
+
+				function networkNode(){
+					for(var i = 0; i < indexList; i++){
+					if(listNode[i].link.length > 0){
+							for(var j = 0; j < listNode[i].link.length; j++){
+								linetoline(i, listNode[i].link[j]);
+							}
+						}
+					}
+				}
+
 				function circle(){
-					for(var i = 0; i <= indexList; i++)
+					for(var i = 0; i < indexList; i++)
 					{
 						ctx.beginPath();
 						ctx.arc(listNode[i].posx, listNode[i].posy, 30, 0, 2 * Math.PI, false);
@@ -79,9 +85,7 @@
 
 				function draw() {
 					clear();
-					var tf = getPointOnCircle(30, listNode[0].posx, listNode[0].posy,  listNode[1].posx, listNode[1].posy);
-					var tt = getPointOnCircle(30, listNode[1].posx, listNode[1].posy,  listNode[0].posx, listNode[0].posy);
-					triangle( tf.px, tf.py,  tt.px, tt.py);
+					networkNode();
 					circle();
 				}
 
@@ -99,18 +103,21 @@
 				}
 			}
 
-			function addNode(x, y, text){
+			function addNode(x, y, t, l){
 				var node = {
+					id   : indexList,
 					posx : x,
 					posy : y,
-					content  : text
+					content  : t,
+					link : l
 				};
+
 				listNode[indexList] = node;
 				indexList = indexList + 1;
 			}
 
 			function actionAddNodeDown(e){
-				addNode(e.pageX, e.pageY, "Node1");
+				addNode(e.pageX, e.pageY, "Node1", []);
 				canvas.onmousedown = myDown;
 			}
 
@@ -119,7 +126,7 @@
 			}
 
 			function myDown(e){
-				for(var i = 0; i < listNode.length; i++)
+				for(var i = 0; i < indexList; i++)
 				{
 					if((e.pageX >= listNode[i].posx) && (e.pageX <= listNode[i].posx + 60) && (e.pageY >= listNode[i].posy) && (e.pageY <= listNode[i].posy + 60))
 					{
@@ -135,8 +142,10 @@
 				canvas.onmousemove = null;
 			}
 
-			addNode(100, 100, "Node 1");
-			addNode(100, 200, "Node 2");
+			addNode(100, 100, "Node 1", [1, 2]);
+			addNode(200, 200, "Node 2", [2,3]);
+			addNode(100, 300, "Node 3", [3]);
+			addNode(400, 100, "Node 4", []);
 			init();
 			//draw();
 			canvas.onmousedown = myDown;

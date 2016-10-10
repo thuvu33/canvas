@@ -10,12 +10,12 @@
 			position:relative;
 
 		}
-		td{
-			border: 0;
-			padding:0;
-		}
 		#sensor-table{
 			margin-top:50px;
+		}
+		#channel-table{
+			margin-top:50px;
+			margin-left:50px;
 		}
 	</style>
 </head>
@@ -26,21 +26,19 @@
 			<button type="button" onclick="actionDelNode()"> DelNode</button>
 			<button type="button" onclick="actionAddLink()"> Link</button>
 			<button type="button" onclick="actionDelLink()"> DelLink</button>
-			<button type="button" onclick="actionSetting()"> Setting</button>
-			<button type="button" onclick="actionSaveSetting()"> Save</button>
 			<button type="button" onclick="actionExportSetting()"> Export</button>
 			
 		</div>
 		<div>
-			<canvas id="canvas" width="800" height="500">
+			<canvas id="canvas" width="2000" height="600">
 				This text is displayed if your browser does not support HTML5 Canvas.
 			</canvas>
 		</div>
 
-		<div>
-			<table id="sensor-table" >
+		<div border="1">
+			<table id="sensor-table" style="float:left" border="1">
 			</table>
-			<table id="channel-table" >
+			<table id="channel-table" style="float:left" border="1">
 			</table>
 		</div>
 
@@ -51,8 +49,8 @@
 			var ctx;
 			var listNode = [];
 			var indexList = 0;
-			var WIDTH = 800;
-			var HEIGHT = 800;
+			var WIDTH = 2000;
+			var HEIGHT = 600;
 			var dragok = false;
 			var addLinkFirst = -1;
 			var addLinkSecond = -1;
@@ -144,6 +142,7 @@
 					posy : y,
 					content  : t,
 					size_of_buf : 50,
+					size_buf_link: [],
 					link : l
 				};
 
@@ -157,7 +156,7 @@
 
 			function actionAddNodeDown(e){
 				addNode(e.pageX, e.pageY, "Node1", []);
-				actionSetting();//Reload
+				reloadSource();//Reload
 				canvas.onmousedown = myDown;
 			}
 
@@ -167,6 +166,7 @@
 						var xx = listNode[i].link.indexOf(node);
 						if(xx >= 0){
 							listNode[i].link.splice(xx, 1);
+							listNode[i].size_buf_link.splice(xx, 1);
 						}
 					}
 				}
@@ -178,11 +178,13 @@
 					if((e.pageX >= listNode[i].posx) && (e.pageX <= listNode[i].posx + 60) && (e.pageY >= listNode[i].posy) && (e.pageY <= listNode[i].posy + 60)){
 						listNode[i].id = -1;
 						listNode[i].link = [];
+						listNode[i].size_buf_link = [];
 						delLinkInNode(i);
 						canvas.onmousedown = myDown;
 					}
 				}
-                actionSetting();//Reload
+                reloadSource();//Reload
+                reloadChannel();
             }
 
             function actionAddLinkDown(e){
@@ -198,6 +200,7 @@
             				var xx = listNode[addLinkFirst].link.indexOf(addLinkSecond);
             				if(xx < 0){
             					listNode[addLinkFirst].link.push(addLinkSecond);
+            					listNode[addLinkFirst].size_buf_link.push(60);
             					alert("Second " + addLinkSecond);
             				}
             				addLinkFirst = -1;
@@ -206,6 +209,7 @@
             			}
             		}
             	}
+            	reloadChannel();//Reload
             }
 
             function actionAddLink(){
@@ -226,6 +230,7 @@
             				var xx = listNode[delLinkFirst].link.indexOf(delLinkSecond);
             				if(xx >= 0){
             					listNode[delLinkFirst].link.splice(xx, 1);
+            					listNode[delLinkFirst].size_buf_link.splice(xx, 1);
             				}
             				alert("Index " + xx);
             				delLinkFirst = -1;
@@ -234,6 +239,7 @@
             			}
             		}
             	}
+            	reloadChannel();//Reload
             }
 
             function actionDelLink(){
@@ -281,7 +287,7 @@
             }
             function actionExportSetting(){
             	var table = document.getElementById("sensor-table");
-            	var output = "";
+            	var output = "{";
             	if(table.rows.length > 1){
             		for (var r = 1, n = table.rows.length; r < n; r++) {
             			var id = table.rows[r].cells[0].innerHTML;
@@ -291,10 +297,23 @@
             		}
             	}
             	alert(output);
+            	output += "}\n{";
+            	table = document.getElementById("channel-table");
+            	if(table.rows.length > 1){
+            		    for (var r = 1, n = table.rows.length; r < n; r++) {
+            			var id = table.rows[r].cells[0].innerHTML;
+            			var size_buf = table.rows[r].cells[1].childNodes[0].value;
+            			var from = table.rows[r].cells[2].innerHTML;
+            			var to = table.rows[r].cells[3].innerHTML;
+            			output += "id=" + id + ";size_buf=" + size_buf + ";from=" + from+ ";to=" + to + "\n";
+            		}
+            	}
+
+            	output += "}"
             	download('input.txt', output);
             }
 
-            function actionSaveSetting(){
+            function autoSaveSource(){
             	var table = document.getElementById("sensor-table");
             	if(table.rows.length > 1){
             		for (var r = 1, n = table.rows.length; r < n; r++) {
@@ -305,73 +324,88 @@
             	}
             }
 
-            function actionSetting(){
+            function reloadSource(){
             	var table = document.getElementById("sensor-table");
-            	actionSaveSetting();
+            	autoSaveSource();
             	table.innerHTML = '';
             	var header_add = false;
-				for(var i = 0; i < indexList; i++){
-					if(listNode[i].id >= 0){
-						if(header_add == false){
-							var header = table.insertRow(0);
-							header.insertCell(0).innerHTML= '<th>ID</th>';
-							header.insertCell(1).innerHTML= '<th>NodeType</th>';
-							header.insertCell(2).innerHTML= '<th>MaxSizeOfBuffer</th>';
-							header_add = true;
-						}
-						var rowCount = table.rows.length;
-						var row = table.insertRow(rowCount);
-						row.insertCell(0).innerHTML= '<td>' + i + '</td>';
-						row.insertCell(1).innerHTML= '<select id="select_'+ i +'"> <option value="0">Source</option> <option value="1">Intermediate</option> <option value="0">Sink</option> </select>';
-						row.insertCell(2).innerHTML = '<input type="text" value="'+ listNode[i].size_of_buf +'"/>';
-					}
-				}
-			}
+            	for(var i = 0; i < indexList; i++){
+            		if(listNode[i].id >= 0){
+            			if(header_add == false){
+            				var header = table.insertRow(0);
+            				header.insertCell(0).innerHTML= '<th>ID</th>';
+            				header.insertCell(1).innerHTML= '<th>NodeType</th>';
+            				header.insertCell(2).innerHTML= '<th>MaxSizeOfBuffer</th>';
+            				header_add = true;
+            			}
+            			var rowCount = table.rows.length;
+            			var row = table.insertRow(rowCount);
+            			row.insertCell(0).innerHTML= '<td>' + i + '</td>';
+            			row.insertCell(1).innerHTML= '<select id="select_'+ i +'"> <option value="0">Source</option> <option value="1">Intermediate</option> <option value="0">Sink</option> </select>';
+            			row.insertCell(2).innerHTML = '<input type="text" value="'+ listNode[i].size_of_buf +'"/>';
+            		}
+            	}
+            }
 
             function autoSaveChannel(){
             	var table = document.getElementById("channel-table");
             	if(table.rows.length > 1){
             		for (var r = 1, n = table.rows.length; r < n; r++) {
-            			var id = table.rows[r].cells[0].innerHTML;
-            			var val = table.rows[r].cells[2].childNodes[0].value;
-            			listNode[id].size_of_buf = val;
+            			var from = table.rows[r].cells[2].innerHTML;
+            			var to = table.rows[r].cells[3].innerHTML;
+            			var val = table.rows[r].cells[1].childNodes[0].value;
+            			var index = listNode[from].size_buf_link.indexOf(to);
+            			if(index >= 0){
+            				listNode[from].size_buf_link[index] = val;
+            			}
             		}
             	}
             }
 
-			function reloadChannel(){
-				var table = document.getElementById("channel-table");
+
+            function reloadChannel(){
+            	var table = document.getElementById("channel-table");
             	autoSaveChannel();
             	table.innerHTML = '';
             	var header_add = false;
-				for(var i = 0; i < indexList; i++){
-					if(listNode[i].id >= 0){
-						if(header_add == false){
-							var header = table.insertRow(0);
-							header.insertCell(0).innerHTML= '<th>ID</th>';
-							header.insertCell(1).innerHTML= '<th>MaxSizeOfBuffer</th>';
-							header.insertCell(2).innerHTML= '<th>From</th>';
-							header.insertCell(3).innerHTML= '<th>To</th>';
-							header_add = true;
-						}
-						var rowCount = table.rows.length;
-						var row = table.insertRow(rowCount);
-						row.insertCell(0).innerHTML= '<td>' + i + '</td>';
-						row.insertCell(1).innerHTML= '<select id="select_'+ i +'"> <option value="0">Source</option> <option value="1">Intermediate</option> <option value="0">Sink</option> </select>';
-						row.insertCell(2).innerHTML = '<input type="text" value="'+ listNode[i].size_of_buf +'"/>';
-					}
-				}
-								
-			}
+            	for(var i = 0; i < indexList; i++){
+            		if(listNode[i].id >= 0){
+            			if(header_add == false && listNode[i].link.length > 0){
+            				var header = table.insertRow(0);
+            				header.insertCell(0).innerHTML= '<th>ID</th>';
+            				header.insertCell(1).innerHTML= '<th>MaxSizeOfBuffer</th>';
+            				header.insertCell(2).innerHTML= '<th>From</th>';
+            				header.insertCell(3).innerHTML= '<th>To</th>';
+            				header_add = true;
+            			}
+            			if(listNode[i].link.length > 0){
+            				for(var j = 0; j < listNode[i].link.length ; j++){
+            					var rowCount = table.rows.length;
+            					var row = table.insertRow(rowCount);
+            					row.insertCell(0).innerHTML= '<td>' + listNode[i].id + '_' + listNode[i].link[j] + '</td>';
+            					row.insertCell(1).innerHTML = '<input type="text" value="'+ listNode[i].size_buf_link[j] +'"/>';
+            					row.insertCell(2).innerHTML= '<td>' + listNode[i].id + '</td>';
+            					row.insertCell(3).innerHTML= '<td>' + listNode[i].link[j] + '</td>';
+            				}
+            			}
+            		}
+            	}
 
-			addNode(100, 100, "Node 1", []);
-			addNode(200, 200, "Node 2", []);
-			addNode(100, 300, "Node 3", []);
-			addNode(400, 100, "Node 4", []);
-			init();
-			canvas.onmousedown = myDown;
-			canvas.onmouseup = myUp;
-		actionSetting();//Reload
+            }
+
+            function actionLoadLink(){
+            	reloadChannel();
+            }
+
+            addNode(100, 100, "Node 1", []);
+            addNode(200, 200, "Node 2", []);
+            addNode(100, 300, "Node 3", []);
+            addNode(400, 100, "Node 4", []);
+            init();
+            canvas.onmousedown = myDown;
+            canvas.onmouseup = myUp;
+		reloadSource();//Reload
+		reloadChannel();
 
 	</script>
 

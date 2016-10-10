@@ -290,7 +290,7 @@
             }
             function actionExportSetting(){
             	var table = document.getElementById("sensor-table");
-            	var output = "{";
+            	var output = "{\n";
             	if(table.rows.length > 1){
             		for (var r = 1, n = table.rows.length; r < n; r++) {
             			var id = table.rows[r].cells[0].innerHTML;
@@ -300,7 +300,7 @@
             		}
             	}
             	alert(output);
-            	output += "}\n{";
+            	output += "}\n{\n";
             	table = document.getElementById("channel-table");
             	if(table.rows.length > 1){
             		    for (var r = 1, n = table.rows.length; r < n; r++) {

@@ -107,6 +107,8 @@
 						ctx.arc(listNode[i].posx, listNode[i].posy, 30, 0, 2 * Math.PI, false);
 						ctx.stroke();
 						ctx.closePath();
+						ctx.font = "10px Georgia";
+                        ctx.fillText(listNode[i].content, listNode[i].posx - 20, listNode[i].posy + 40);
 					}
 				}
 			}
@@ -147,6 +149,7 @@
 				};
 
 				listNode[indexList] = node;
+				listNode[indexList].content = "Sensor " + indexList;
 				indexList = indexList + 1;
 			}
 
@@ -402,6 +405,7 @@
             addNode(100, 300, "Node 3", []);
             addNode(400, 100, "Node 4", []);
             init();
+
             canvas.onmousedown = myDown;
             canvas.onmouseup = myUp;
 		reloadSource();//Reload

@@ -1,0 +1,10 @@
+MODULE input
+VAR
+    num_p : 0..50;
+INIT num_p in 0;
+
+
+MODULE output
+VAR 
+    num_p : 0..50;
+INIT num_p in 0;

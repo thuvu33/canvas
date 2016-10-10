@@ -1,0 +1,23 @@
+
+MODULE source_id(output)
+DEFINE
+    capB := capa;
+    sr := 2;
+VAR
+    p_buffer : 0..capB;
+    state : {start, congestion};
+ASSIGN
+    init(state) := start;
+    next(state) := start;
+    init(p_buffer) := 10;
+    next(p_buffer) :=
+        case
+            state = start & p_buffer >= sr : p_buffer - sr;
+            TRUE : p_buffer;
+        esac;
+    next(output.num_p) :=
+        case
+            state = start & p_buffer >= sr & output.num_p <= 50 - sr : output.num_p + sr;
+            TRUE : output.num_p;
+        esac;
+

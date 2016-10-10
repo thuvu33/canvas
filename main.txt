@@ -1,0 +1,28 @@
+MODULE main
+
+VAR
+	source_$value1 : process source_$value1(output_$value1);
+	output_$value1 : output;
+
+	sink_$value2 : process sink_$value2(input_$value2);
+	input_$value2 : input;
+
+    intermediate_$value5 : process intermediate_$value5(input_$value5, output_$value5);
+    input_$value5 : input;
+    output_$value5 : output;        
+
+	channel_$value3_$value4 : process channel_$value3_$value4(output_$value3,input_$value4);
+
+LTLSPEC G F intermediate_$value5.state = congestion;
+
+================================
+NOTE:
+$value1 là id trong bảng thứ nhất, nếu id có node type là source. Ứng với mỗi id có node type là source thì parse 2 dòng 5 và 6.
+
+$value2 là id trong bảng thứ nhất, nếu id có node type là sink. Ứng với mỗi id có node type là sink thì parse 2 dòng 8 và 9.
+
+$value5 là id trong bảng thứ nhất, nếu id có node type là intermediate. Ứng với mỗi id có node type là intermediate thì parse 3 dòng 11, 12 và 13.
+
+Thứ tự các dòng parsing cho source, sink hay intermediate ko cần thứ tự.
+
+$value3 và $value4 là số id trong bảng thứ 2.

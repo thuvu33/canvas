@@ -56,6 +56,27 @@
 			var addLinkSecond = -1;
 			var delLinkFirst = -1;
 			var delLinkSecond = -1;
+                  var default_parse='MODULE input\nVAR\n    num_p : 0..50;\nINIT num_p in 0;\n\nMODULE output\nVAR \n    num_p : 0..50;\nINIT num_p in 0;\n';
+
+                  function parse_source(id, cap){
+                        var source_ele='\nMODULE source_'+id+'(output)\nDEFINE\n    capB := '+cap+';\n    sr := 2;\nVAR\n    p_buffer : 0..capB;\n    state : {start, congestion};\nASSIGN\n    init(state) := start;\n    next(state) := start;\n    init(p_buffer) := 10;\n    next(p_buffer) :=\n        case\n            state = start & p_buffer >= sr : p_buffer - sr;\n            TRUE : p_buffer;\n        esac;\n    next(output.num_p) :=\n        case\n            state = start & p_buffer >= sr & output.num_p <= 50 - sr : output.num_p + sr;\n            TRUE : output.num_p;\n        esac;\n\n';
+                        return source_ele;
+                  }
+
+                  function parse_intermediate(id, cap){
+                        var intermediate_ele='\nMODULE intermediate_'+id+'(input, output)\nDEFINE\n    capB := '+cap+';\n    rr := 2;\n      sr := 2;\n    cond_congestion := (p_buffer / capB) > (7 / 10);\nVAR\n    p_buffer : 0.. capB;\n    state : {start, congestion};\nIVAR\n    action : {receive, send};\nASSIGN\n    init(state) := start;\n    next(state) := \n        case\n            cond_congestion : congestion;\n            TRUE : state;\n        esac;\n    init(p_buffer) := 0;\n    next(p_buffer) :=\n        case\n            state = start & action = receive & input.num_p >= rr & p_buffer <= capB - rr : p_buffer + rr;\n            state = start & action = send & p_buffer >= sr : p_buffer - sr;\n                        TRUE : p_buffer;\n              esac;\n next(input.num_p) :=\n          case\n                  state = start & action = receive & input.num_p >= rr : input.num_p - rr;\n                      TRUE : input.num_p;\n           esac;\n next(output.num_p) :=\n         case\n                  state = start & action = send & p_buffer >= sr & output.num_p <= 50 - sr : output.num_p + sr;\n                 TRUE : output.num_p;\n          esac;\n';
+                        return intermediate_ele;
+                  }
+
+                  function parse_channel(from, to, cap){
+                        var channel_ele='\nMODULE channel_'+from +'_'+to+'(sensor_output, sensor_input)\nDEFINE\n    capB := '+cap+';\n    rr := 2;\n    sr := 2;\nVAR\n    p_buffer : 0.. capB;\nIVAR\n    action : {receive, send};\nASSIGN\n    init(p_buffer) := 0;\n    next(p_buffer) :=\n        case\n            action = receive & sensor_output.num_p >= rr & p_buffer <= capB - rr : p_buffer + rr;\n            action = send & p_buffer >= sr : p_buffer - sr;\n            TRUE : p_buffer;\n        esac;\n    next(sensor_output.num_p) :=\n        case\n            action = receive & sensor_output.num_p >= rr : sensor_output.num_p - rr;\n            TRUE : sensor_output.num_p;\n        esac;\n    next(sensor_input.num_p) :=\n        case\n            action = send & p_buffer >= sr &sensor_input.num_p <= 50 - sr : sensor_input.num_p + sr;\n            TRUE : sensor_input.num_p;\n        esac;\n\n';
+                        return channel_ele;
+                  }
+
+                  function parse_sink(id, cap){
+                        var sink_ele='\nMODULE sink_'+id+'(input)\nDEFINE\n    capB := '+cap+';\n    rr := 2;\nVAR\n    p_buffer : 0..capB;\n    state : {start, congestion};\nASSIGN\n    init(state) := start;\n    next(state) := start;\n    init(p_buffer) := 0;\n    next(p_buffer) :=\n        case\n            state = start & input.num_p >= rr & p_buffer <= capB - rr : p_buffer + rr;\n            TRUE : p_buffer;\n        esac;\n    next(input.num_p) :=\n        case\n            state = start & input.num_p >= rr : input.num_p - rr;\n            TRUE : input.num_p;\n        esac;\n\n';
+                        return sink_ele;
+                  }
 
 			function arrow(fromx, fromy, tox, toy){
 			    var headlen = 10;   // length of head in pixels
@@ -289,18 +310,28 @@
             	}
             }
             function actionExportSetting(){
+                  var output='';
+                  output+= default_parse;
             	var table = document.getElementById("sensor-table");
-            	var output = "{\n";
+
             	if(table.rows.length > 1){
             		for (var r = 1, n = table.rows.length; r < n; r++) {
             			var id = table.rows[r].cells[0].innerHTML;
             			var type = table.rows[r].cells[1].childNodes[0].value;
             			var size_buf = table.rows[r].cells[2].childNodes[0].value;
-            			output += "id=" + id + ";type=" + type + ";size_buf=" + size_buf+ "\n";
+                              if(type==0){
+                                    output+=parse_source(id, size_buf);
+                              }
+                              else if(type==1){
+                                    output+=parse_intermediate(id, size_buf);
+                              }
+                              else if(type==2){
+                                    output+=parse_sink(id, size_buf);
+                              }
             		}
             	}
-            	alert(output);
-            	output += "}\n{\n";
+
+
             	table = document.getElementById("channel-table");
             	if(table.rows.length > 1){
             		    for (var r = 1, n = table.rows.length; r < n; r++) {
@@ -308,11 +339,40 @@
             			var size_buf = table.rows[r].cells[1].childNodes[0].value;
             			var from = table.rows[r].cells[2].innerHTML;
             			var to = table.rows[r].cells[3].innerHTML;
-            			output += "id=" + id + ";size_buf=" + size_buf + ";from=" + from+ ";to=" + to + "\n";
+            			output+=parse_channel(from, to, size_buf);
             		}
             	}
 
-            	output += "}"
+                  table = document.getElementById("sensor-table");
+                  if(table.rows.length > 1){
+                        output+='\nMODULE main\n\nVAR\n';
+                        for (var r = 1, n = table.rows.length; r < n; r++) {
+                              var id = table.rows[r].cells[0].innerHTML;
+                              var type = table.rows[r].cells[1].childNodes[0].value;
+                              var size_buf = table.rows[r].cells[2].childNodes[0].value;
+                              if(type==0){
+                                    output+='        source_'+id+' : process source_'+id+'(output_'+id+');\n        output_'+id+' : output;\n\n';
+                              }
+                              else if(type==1){
+                                    output+='    intermediate_'+id+' : process intermediate_'+id+'(input_'+id+', output_'+id+');\n    input_'+id+' : input;\n    output_'+id+' : output;\n\n';
+                              }
+                              else if(type==2){
+                                    output+='        sink_'+id+' : process sink_'+id+'(input_'+id+');\n        input_'+id+' : input;\n\n';
+                              }
+                        }
+                  }
+
+                  table = document.getElementById("channel-table");
+                  if(table.rows.length > 1){
+                            for (var r = 1, n = table.rows.length; r < n; r++) {
+                              var id = table.rows[r].cells[0].innerHTML;
+                              var size_buf = table.rows[r].cells[1].childNodes[0].value;
+                              var from = table.rows[r].cells[2].innerHTML;
+                              var to = table.rows[r].cells[3].innerHTML;
+                              output+=' channel_'+from+'_'+to+' : process channel_'+from+'_'+to+'(output_'+from+',input_'+to+');\n';
+                        }
+                  }
+
             	download('input.txt', output);
             }
 
@@ -344,7 +404,7 @@
             			var rowCount = table.rows.length;
             			var row = table.insertRow(rowCount);
             			row.insertCell(0).innerHTML= '<td>' + i + '</td>';
-            			row.insertCell(1).innerHTML= '<select id="select_'+ i +'"> <option value="0">Source</option> <option value="1">Intermediate</option> <option value="0">Sink</option> </select>';
+            			row.insertCell(1).innerHTML= '<select id="select_'+ i +'"> <option value="0">Source</option> <option value="1">Intermediate</option> <option value="2">Sink</option> </select>';
             			row.insertCell(2).innerHTML = '<input type="text" value="'+ listNode[i].size_of_buf +'"/>';
             		}
             	}
